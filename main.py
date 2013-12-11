@@ -18,9 +18,9 @@ history = priceHistory.groupHistory(watch_list.symbols())
 history = priceHistory.groupHistory(['FXF', 'FXH', 'GLD', 'QLD' ])
 history = priceHistory.groupHistory(['RXL', 'GLD', 'QLD', 'SPXL', 'TYD', 'TMF', 'UST'])
 history = priceHistory.groupHistory(watch_list.symbols())
-history = priceHistory.groupHistory(['TYD', 'UGE', 'RXL', 'BZQ', 'UST', 'FXG', 'EDV', 'UGA', 'QLD']) # Derived from larger list
+history = priceHistory.groupHistory(['RXL', 'BZQ', 'UGE', 'UGA', 'YCS', 'TYD', 'FXG', 'LBND', 'FXF']) # Derived from larger list
 
-history.load_to_date(conn, datetime.date(2013,11,1), 900)
+history.load_to_date(conn, 750, datetime.date(2099,1,1))
 
 all_returns = history.matrix_of_returns().T
 
@@ -29,8 +29,9 @@ cross_val_return_results = []
 vol_results = []
 
 allocations = {}
+iters = 10000
 
-for trial in range(1000):
+for trial in range(iters):
     numpy.random.shuffle(all_returns)
 
     train_returns = all_returns[0::2,:].T
@@ -71,7 +72,7 @@ for trial in range(1000):
     crossq = - matrix(mean_test_returns)
     cross_val_return_results.append( (-x.T*crossq*250)[0] )
 
-print "mu is ", mu
+print "mu=%g; iters=%d" % (mu,iters)
 print "Mean/Std of optimal returns = %g/%g" % (numpy.mean(return_results),
                                                numpy.std(return_results))
 print "Mean/Std of optimal volatilities = %g/%g" % (numpy.mean(vol_results),
@@ -83,6 +84,3 @@ total = sum([allocations[s] for s in history.symbols])
 result  = [ (s,allocations[s]/total) for s in history.symbols ]
 sortedresult = sorted(result,key=lambda s: s[1], reverse=True)
 print sortedresult[0:10]
-
-
-

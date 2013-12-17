@@ -15,7 +15,23 @@ class portfolio:
         self.groupHistory = None
 
     def __repr__ (self):
-        return 'portfolio(%s, %g)' % (self.equities, self.cash)
+        return 'portfolio(%s, %s)' % (self.equities, self.cash)
+
+    def __sub__ (self, other):
+        result = {}
+
+        for symbol in self.quantities:
+            result[symbol] = self.quantities[symbol]
+
+        for symbol in other.quantities:
+            if symbol in result:
+                result[symbol] -= other.quantities[symbol]
+            else:
+                result[symbol] = - other.quantities[symbol]
+
+        print "self.cash=", self.cash
+        print "other.cash=", other.cash
+        return portfolio([(s,result[s]) for s in result], self.cash-other.cash)
 
     def load_to_date(self, connection, number, end_date=datetime.date.today()):
         self.groupHistory = priceHistory.groupHistory(self.symbols)
@@ -30,12 +46,29 @@ class portfolio:
         for s in self.groupHistory.symbols:
             result += self.groupHistory[s].last_price() * decimal.Decimal(self.quantities[s])
         return result
-            
-            
 
-        
-        
+    def allocation(self, connection):
+        "Return a list of tuples of (symbol, percent_of_portfolio_value)"
+        v = float(self.value(connection))
+        return [(s,float(self.groupHistory[s].last_price()) * (self.quantities[s])/v) for s in self.groupHistory.symbols]
 
-        
+
+    @classmethod
+    def from_allocation(cls, allocation, cash_available, connection):
+    	"Return a portfolio from an allocation"
+        symbols = [a[0] for a in allocation]
+        ph = priceHistory.groupHistory(symbols)
+        ph.load_to_date(connection, 1)
+        percent_allocated = sum([a[1] for a in allocation])
+        equities = []
+        cash_left = decimal.Decimal(cash_available,2)
+        print cash_left
+        for a in allocation:
+            quantity = int(round(a[1]*cash_available/float(ph[a[0]].last_price())))
+            equities.append((a[0],quantity))
+            cash_left -= quantity * ph[a[0]].last_price()
+            print cash_left
+        return portfolio(equities, cash_left)
+
 
 

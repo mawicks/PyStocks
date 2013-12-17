@@ -6,16 +6,31 @@ class portfolio:
 
     def __init__ (self, equities, cash = 0.0):
         "equities must be a list of tuples of (symbol, quantity)"
-        self.symbols = [e[0] for e in equities]
-        self.equities = equities
         self.cash = decimal.Decimal(cash)
         self.quantities = {}
         for e in equities:
-            self.quantities[e[0]] = e[1]
+            if e[1] != 0:
+                self.quantities[e[0]] = e[1]
         self.groupHistory = None
 
     def __repr__ (self):
-        return 'portfolio(%s, %s)' % (self.equities, self.cash)
+        return 'portfolio(%s, %s)' % ([(s,self.quantities[s]) for s in self.quantities], self.cash)
+
+    def __add__ (self, other):
+        result = {}
+
+        for symbol in self.quantities:
+            result[symbol] = self.quantities[symbol]
+
+        for symbol in other.quantities:
+            if symbol in result:
+                result[symbol] += other.quantities[symbol]
+            else:
+                result[symbol] = other.quantities[symbol]
+            if result[symbol] == 0:
+                del result[symbol]
+
+        return portfolio([(s,result[s]) for s in result], self.cash+other.cash)
 
     def __sub__ (self, other):
         result = {}
@@ -28,18 +43,18 @@ class portfolio:
                 result[symbol] -= other.quantities[symbol]
             else:
                 result[symbol] = - other.quantities[symbol]
+            if result[symbol] == 0:
+                    del result[symbol]
 
-        print "self.cash=", self.cash
-        print "other.cash=", other.cash
         return portfolio([(s,result[s]) for s in result], self.cash-other.cash)
 
     def load_to_date(self, connection, number, end_date=datetime.date.today()):
-        self.groupHistory = priceHistory.groupHistory(self.symbols)
+        self.groupHistory = priceHistory.groupHistory(self.quantities.keys())
         self.groupHistory.load_to_date(connection, number, end_date)
         
     def value(self, connection):
         if self.groupHistory == None or self.groupHistory.history_days < 1:
-            self.groupHistory = priceHistory.groupHistory(self.symbols)
+            self.groupHistory = priceHistory.groupHistory(self.quantities.keys())
             self.groupHistory.load_to_date(connection, 1)
         
         result = self.cash

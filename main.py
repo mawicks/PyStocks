@@ -1,86 +1,158 @@
 import datetime
 from cvxopt import matrix
-from cvxopt.solvers import qp
-from cvxopt.solvers import options as solver_options
 import psycopg2
 import priceHistory
 import numpy
+import portfolio
+import optimal_allocation
 
-solver_options['show_progress'] = False
+virtual_pf_20140112 = portfolio.portfolio ([('BZQ', 304),
+                                   ('FXF', 159), 
+                                   ('FXG', 752),
+                                   ('LBND', 322),
+                                   ('RXL', 583),
+                                   ('TYD', 753),
+                                   ('UGA', 210),
+                                   ('UGE', 195),
+                                   ('YCS', 292)])
 
-conn=psycopg2.connect(host="nas.wicksnet.us",dbname="stocks",user="mwicks")
+ameritrade_pf_20140112 = portfolio.portfolio ([('EDV', 227),
+                                               ('EUO', 667),
+                                               ('FXH', 1494),
+                                               ('QLD', 220),
+                                               ('TYD', 1428),
+                                               ('XLP', 1749)],
+                                              10993.81)
+
+ameritrade_pf_20140113 = portfolio.portfolio ([('BZQ', 305),
+                                      ('FXF', 149),
+                                      ('FXG', 731),
+                                      ('RXL', 556),
+                                      ('TYD', 767),
+                                      ('UGA', 186),
+                                      ('UGE', 185),
+                                      ('YCS', 306)],
+                                     64734.48+10933.81)
+
+ameritrade_pf_20140114 = portfolio.portfolio ([('BZQ', 395),
+                                      ('FXF', 189),
+                                      ('FXG', 731),
+                                      ('RXL', 556),
+                                      ('TYD', 993),
+                                      ('UGA', 237),
+                                      ('UGE', 185),
+                                      ('YCS', 306)],
+                                     41250.50+10933.81)
+
+ameritrade_pf_20140115 = portfolio.portfolio ([('BZQ', 395),
+                                      ('FXF', 189),
+                                      ('FXG', 958),
+                                      ('LBND', 441),
+                                      ('RXL', 754),
+                                      ('TYD', 993),
+                                      ('UGA', 237),
+                                      ('UGE', 240),
+                                      ('YCS', 306)],
+                                     10993.81-2354.15)
+
+ameritrade_pf_20140116 = portfolio.portfolio ([('BZQ', 395),
+                                      ('FXF', 189),
+                                      ('FXG', 958),
+                                      ('LBND', 441),
+                                      ('RXL', 754),
+                                      ('TYD', 993),
+                                      ('UGA', 237),
+                                      ('UGE', 240),
+                                      ('YCS', 414)],
+                                     10993.82-9856.10)
+
+ameritrade_pf_20140201 = portfolio.portfolio ([('BZQ', 340),
+                                      ('FXF', 189),
+                                      ('FXG', 958),
+                                      ('LBND', 441),
+                                      ('RXL', 754),
+                                      ('TYD', 1171),
+                                      ('UGA', 237),
+                                      ('UGE', 240),
+                                      ('YCS', 414)],
+                                     1137.80-1107.67)
+
+ameritrade_pf_20140204 = portfolio.portfolio ([('BZQ', 340),
+                                      ('FXF', 189),
+                                      ('FXG', 815),
+                                      ('LBND', 370),
+                                      ('RXL', 846),
+                                      ('TYD', 1171),
+                                      ('UGA', 237),
+                                      ('UGE', 240),
+                                      ('YCS', 414)],
+                                     1137.80-1368.03)
+
+ameritrade_pf_20140212 = portfolio.portfolio ([('BZQ', 373),
+                                      ('FXF', 189),
+                                      ('FXG', 815),
+                                      ('LBND', 370),
+                                      ('RXL', 787),
+                                      ('TYD', 1171),
+                                      ('UGA', 237),
+                                      ('UGE', 240),
+                                      ('YCS', 414)],
+                                     1887.64-0.0)
+
+current_pf = ameritrade_pf_20140212
+
+db_connection=psycopg2.connect(host="nas.wicksnet.us",dbname="stocks",user="mwicks")
+print("Current portfolio value = ", current_pf.value(db_connection))
 
 watch_list = priceHistory.watchList()
-watch_list.load(conn)
+watch_list.load(db_connection)
 
-history = priceHistory.groupHistory(watch_list.symbols())
-#history = priceHistory.groupHistory(['DDM', 'EDV', 'EUO', 'FXF', 'FXG', 'FXH', 'GLD', 'QLD', 'SIVR', 'SMB', 'SPY', 'TYD', 'XLP' ])
-history = priceHistory.groupHistory(['FXF', 'FXH', 'GLD', 'QLD' ])
-history = priceHistory.groupHistory(['RXL', 'GLD', 'QLD', 'SPXL', 'TYD', 'TMF', 'UST'])
-history = priceHistory.groupHistory(watch_list.symbols())
-history = priceHistory.groupHistory(['RXL', 'BZQ', 'UGE', 'UGA', 'YCS', 'TYD', 'FXG', 'LBND', 'FXF']) # Derived from larger list
+current_pf_symbols = current_pf.symbols()
 
-history.load_to_date(conn, 750, datetime.date(2099,1,1))
+mu=15
+iters=10000
+print("Optimizing over all watch list symbols...")
+(allocation, opt_returns, opt_vols, cross_val_returns) = optimal_allocation.optimal_allocation(db_connection,
+                                                                                               watch_list.symbols(),
+                                                                                               mu=mu,
+                                                                                               days=750,
+                                                                                               end_date=datetime.date(2099,1,1),
+                                                                                               iters=iters)
+sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
 
-all_returns = history.matrix_of_returns().T
+best_symbols = sorted([s[0] for s in sorted_allocation[0:10]])
+print ("best_symbols = ", best_symbols)
 
-return_results = []
-cross_val_return_results = []
-vol_results = []
+# CHANGE ME
+# CHANGE ME
+# CHANGE ME
+kept_symbols = current_pf_symbols
+print ("using symbols = ", kept_symbols)
 
-allocations = {}
-iters = 10000
+print("Optimizing over top 10 symbols...")
+(allocation, opt_returns, opt_vols, cross_val_returns) = optimal_allocation.optimal_allocation(db_connection,
+                                                                                               kept_symbols,
+                                                                                               mu=mu,
+                                                                                               days=750,
+                                                                                               end_date=datetime.date(2099,1,1),
+                                                                                               iters=iters)
 
-for trial in range(iters):
-    numpy.random.shuffle(all_returns)
+print("Done.")
 
-    train_returns = all_returns[0::2,:].T
-    test_returns = all_returns[1::2,:].T
+print("mu=%g; iters=%d" % (mu,iters))
+print("Mean/Std of optimal returns = %g/%g" % (numpy.mean(opt_returns),
+                                               numpy.std(opt_returns)))
+print("Mean/Std of optimal volatilities = %g/%g" % (numpy.mean(opt_vols),
+                                                    numpy.std(opt_vols)))
+print("Mean/Std of cross-returns = %g/%g" % (numpy.mean(cross_val_returns),
+                                             numpy.std(cross_val_returns)))
 
-    mean_train_returns = numpy.mean(train_returns,1)
-    cov_train_returns = numpy.cov(train_returns)
+sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
+print(sorted_allocation[0:10])
 
-    mean_test_returns = numpy.mean(test_returns,1)
-    cov_test_returns = numpy.cov(test_returns)
+pf = portfolio.portfolio.from_allocation(db_connection, sorted_allocation, current_pf.value(db_connection))
 
-    n = len(history.symbols)
-    maxalloc = 0.99
-
-    mu = 15
-
-    P = 2 * mu * matrix(cov_train_returns)
-    q = -matrix(mean_train_returns)
-    G = -matrix(numpy.identity(n))
-    h = matrix(0.0, (n,1))
-    A = matrix(1.0, (1,n))
-    b = matrix(1.0, (1,1))
-    result = qp(P,q,G,h,A,b)
-    if result['status'] != "optimal":
-        raise Exception("Quadratic solver failed" + result['status'])
-
-    x = result['x']
-
-    for i in range(n):
-        if history.symbols[i] in allocations:
-            allocations[history.symbols[i]] += x[i]
-        else:
-            allocations[history.symbols[i]] = x[i]
-
-    vol_results.append(numpy.sqrt(250*(x.T*matrix(cov_train_returns)*x)[0]))
-    return_results.append( (-x.T*q*250)[0] )
-
-    crossq = - matrix(mean_test_returns)
-    cross_val_return_results.append( (-x.T*crossq*250)[0] )
-
-print "mu=%g; iters=%d" % (mu,iters)
-print "Mean/Std of optimal returns = %g/%g" % (numpy.mean(return_results),
-                                               numpy.std(return_results))
-print "Mean/Std of optimal volatilities = %g/%g" % (numpy.mean(vol_results),
-                                                    numpy.std(vol_results))
-print "Mean/Std of cross-returns = %g/%g" % (numpy.mean(cross_val_return_results),
-                                             numpy.std(cross_val_return_results))
-
-total = sum([allocations[s] for s in history.symbols])
-result  = [ (s,allocations[s]/total) for s in history.symbols ]
-sortedresult = sorted(result,key=lambda s: s[1], reverse=True)
-print sortedresult[0:10]
+print(" Current portfolio: %s" % current_pf)
+print("Proposed portfolio: %s" % pf)
+print("    Buy/Sell order: %s" % (pf-current_pf))
+print("   Buy/Sell values: %s" % (pf-current_pf).values(db_connection))

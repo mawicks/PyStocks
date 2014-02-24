@@ -14,7 +14,7 @@ class portfolio:
         self.groupHistory = None
 
     def __repr__ (self):
-        return 'portfolio(%s, %s)' % ([(s,self.quantities[s]) for s in self.quantities], self.cash)
+        return 'portfolio(%s, %s)' % ([(s,self.quantities[s]) for s in sorted(self.quantities.keys())], self.cash)
 
     def __add__ (self, other):
         result = {}
@@ -52,14 +52,18 @@ class portfolio:
         self.groupHistory = priceHistory.groupHistory(self.quantities.keys())
         self.groupHistory.load_to_date(connection, number, end_date)
         
-    def value(self, connection):
+    def values(self, connection):
         if self.groupHistory == None or self.groupHistory.history_days < 1:
             self.groupHistory = priceHistory.groupHistory(self.quantities.keys())
             self.groupHistory.load_to_date(connection, 1)
-        
+
+        return [ (s, self.groupHistory[s].last_price(), self.quantities[s]*self.groupHistory[s].last_price()) for s in sorted(self.groupHistory.symbols) ]
+
+    def value(self, connection):
         result = self.cash
-        for s in self.groupHistory.symbols:
-            result += self.groupHistory[s].last_price() * decimal.Decimal(self.quantities[s])
+        for s in self.values(connection):
+            print(s)
+            result += s[2]
         return result
 
     def allocation(self, connection):
@@ -67,23 +71,21 @@ class portfolio:
         v = float(self.value(connection))
         return [(s,float(self.groupHistory[s].last_price()) * (self.quantities[s])/v) for s in self.groupHistory.symbols]
 
-
     @classmethod
-    def from_allocation(cls, allocation, cash_available, connection):
-    	"Return a portfolio from an allocation"
+    def from_allocation(cls, connection, allocation, cash_available):
+        "Return a portfolio from an allocation"
         symbols = [a[0] for a in allocation]
         ph = priceHistory.groupHistory(symbols)
         ph.load_to_date(connection, 1)
         percent_allocated = sum([a[1] for a in allocation])
         equities = []
-        cash_left = decimal.Decimal(cash_available,2)
-        print cash_left
+        cash_left = decimal.Decimal(cash_available)
         for a in allocation:
-            quantity = int(round(a[1]*cash_available/float(ph[a[0]].last_price())))
+            quantity = int(round(a[1]*float(cash_available)/float(ph[a[0]].last_price())))
             equities.append((a[0],quantity))
             cash_left -= quantity * ph[a[0]].last_price()
-            print cash_left
         return portfolio(equities, cash_left)
 
-
+    def symbols(self):
+        return sorted(self.quantities.keys())
 

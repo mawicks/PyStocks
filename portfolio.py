@@ -11,7 +11,6 @@ class portfolio:
         for e in equities:
             if e[1] != 0:
                 self.quantities[e[0]] = e[1]
-        self.groupHistory = None
 
     def __repr__ (self):
         return 'portfolio(%s, %s)' % ([(s,self.quantities[s]) for s in sorted(self.quantities.keys())], self.cash)
@@ -48,28 +47,29 @@ class portfolio:
 
         return portfolio([(s,result[s]) for s in result], self.cash-other.cash)
 
-    def load_to_date(self, connection, number, end_date=datetime.date.today()):
-        self.groupHistory = priceHistory.groupHistory(self.quantities.keys())
-        self.groupHistory.load_to_date(connection, number, end_date)
-        
     def values(self, connection):
-        if self.groupHistory == None or self.groupHistory.history_days < 1:
-            self.groupHistory = priceHistory.groupHistory(self.quantities.keys())
-            self.groupHistory.load_to_date(connection, 1)
-
-        return [ (s, self.groupHistory[s].last_price(), self.quantities[s]*self.groupHistory[s].last_price()) for s in sorted(self.groupHistory.symbols) ]
+        gh = priceHistory.groupHistory(self.quantities.keys())
+        gh.load_to_date(connection, 1)
+        result = {}
+        for s in sorted(gh.symbols):
+            result[s] = self.quantities[s]*gh[s].last_price()
+        return result
 
     def value(self, connection):
         result = self.cash
-        for s in self.values(connection):
-            print(s)
-            result += s[2]
+        values = self.values(connection)
+        for s in values.keys():
+            print("%5s: %10.2f" % (s,values[s]))
+            result += values[s]
+        print(" cash: %10.2f" % (self.cash))
+        print("total: %10.2f" % (result))
         return result
 
     def allocation(self, connection):
         "Return a list of tuples of (symbol, percent_of_portfolio_value)"
         v = float(self.value(connection))
-        return [(s,float(self.groupHistory[s].last_price()) * (self.quantities[s])/v) for s in self.groupHistory.symbols]
+        values = self.values(connection)
+        return [(s,float(values[s]/v)) for s in self.quantities.keys()]
 
     @classmethod
     def from_allocation(cls, connection, allocation, cash_available):

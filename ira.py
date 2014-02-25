@@ -108,7 +108,7 @@ print("Mean/Std of cross-returns = %g/%g" % (numpy.mean(cross_val_returns),
                                              numpy.std(cross_val_returns)))
 
 sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
-print(sorted_allocation[0:10])
+print(sorted_allocation)
 
 pf = portfolio.portfolio.from_allocation(db_connection, sorted_allocation, current_pf.value(db_connection))
 

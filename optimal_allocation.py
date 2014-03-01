@@ -9,7 +9,7 @@ import portfolio
 
 solver_options['show_progress'] = False
 
-def optimal_allocation(db_connection, symbols, mu=15, days=750, end_date=datetime.date(2099,1,1), iters=1000):
+def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=datetime.date(2099,1,1), iters=1000):
     history = priceHistory.groupHistory(symbols)
 
     print("symbols=", symbols)
@@ -39,7 +39,8 @@ def optimal_allocation(db_connection, symbols, mu=15, days=750, end_date=datetim
         n = len(history.symbols)
         maxalloc = 0.99
 
-        P = 2 * mu * matrix(cov_train_returns)
+# Following parameters maximize mu - slope*sigma^2
+        P = 2 * slope * matrix(cov_train_returns)
         q = -matrix(mean_train_returns)
         G = -matrix(numpy.identity(n))
         h = matrix(0.0, (n,1))

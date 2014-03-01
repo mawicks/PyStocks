@@ -112,16 +112,16 @@ current_pf_symbols = current_pf.symbols()
 mu=15
 iters=10000
 print("Optimizing over all watch list symbols...")
-(allocation, opt_returns, opt_vols, cross_val_returns) = optimal_allocation.optimal_allocation(db_connection,
-                                                                                               watch_list.symbols(),
-                                                                                               mu=mu,
-                                                                                               days=750,
-                                                                                               end_date=datetime.date(2099,1,1),
-                                                                                               iters=iters)
-sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
+# (allocation, opt_returns, opt_vols, cross_val_returns) = optimal_allocation.optimal_allocation(db_connection,
+#                                                                                               watch_list.symbols(),
+#                                                                                               mu=mu,
+#                                                                                               days=750,
+#                                                                                               end_date=datetime.date(2099,1,1),
+#                                                                                               iters=iters)
+#sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
 
-best_symbols = sorted([s[0] for s in sorted_allocation[0:10]])
-print ("best_symbols = ", best_symbols)
+#best_symbols = sorted([s[0] for s in sorted_allocation[0:10]])
+#print ("best_symbols = ", best_symbols)
 
 # CHANGE ME
 # CHANGE ME

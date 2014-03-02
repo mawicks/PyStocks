@@ -1,71 +1,64 @@
 import numpy
 import datetime
 
-class symbolHistory:
+class SymbolHistory:
 
     def __init__(self, symbol, history=[]):
-        "history should be a list of tuples (date, price) with most recent date last"
+        "history should be an iterator returning tuples (date, price, daily_return) with most recent date last"
         self.symbol = symbol
-        self.history = history
+        self.history = [ t for t in history]
         
-    def __repr__ (self):
-        return 'symbolHistory("%s", %r)' % (self.symbol, self.history)
+    def __repr__(self):
+        return 'SymbolHistory({0}, {1!r})'.format(self.symbol, self.history)
 
-    def first_date (self):
+    def first_date(self):
+        "Returns the first date in the history"
         if len(self.history) > 0:
             return self.history[0][0]
         else:
             return None
 
-    def last_date (self):
+    def last_date(self):
+        "Returns the last date in the history"
         if len(self.history) > 0:
             return self.history[-1][0]
         else:
             return None
 
-    def first_price (self):
-        return self.history[0][1]
+    def first_price(self):
+        "Returns the first price in the history"
+        if len(self.history) > 0:
+            return self.history[0][1]
+        else:
+            return None
 
-    def last_price (self):
-        return self.history[-1][1]
+    def last_price(self):
+        "Returns the last price in the history"
+        if len(self.history) > 0:
+            return self.history[-1][1]
+        else:
+            return None
 
-    def prices (self):
-        return [element[1] for element in self.history]
+    def prices(self):
+        "Returns an iterator over all prices in the history"
+        return map(lambda s: s[1], self.history)
 
-    def returns (self):
-        return [element[2] for element in self.history]
+    def returns(self):
+        "Returns an iterator over all daily returns in the history"
+        return map(lambda s: s[2], self.history)
 
-    def days (self):
+    def days(self):
+        "Returns the number of days in the history"
         return len(self.history)
 
-    def load_to_date (self, connection, number, end_date=datetime.date.today()):
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT h.date,h.close,h.daily_return "
-                           " FROM symbols s LEFT JOIN history h "
-                           " ON (s.id = h.symbol_id) "
-                           " WHERE s.symbol = %s "
-                           "   AND h.date <= %s "
-                           " ORDER by h.date DESC "
-                           " LIMIT %s ",
-                           (self.symbol, end_date, number))
-            self.history = cursor.fetchall()
-        self.history.reverse()
-        return self
-        
-    def load_date_range (self, connection, start_date, end_date=datetime.date.today()):
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT h.date,h.close,h.daily_return "
-                           " FROM symbols s LEFT JOIN history h "
-                           " ON (s.id = h.symbol_id) "
-                           " WHERE s.symbol = %s "
-                           "   AND h.date >= %s "
-                           "   AND h.date <= %s "
-                           " ORDER by h.date ",
-                           (self.symbol, start_date, end_date))
-            self.history = cursor.fetchall()
-        return self
+    def load_to_date(self, price_source, number, end_date=datetime.date.today()):
+        self.history = [tuple for tuple in price_source.load_to_date(self.symbol, number, end_date=end_date)]
 
-class groupHistory:
+    def load_date_range(self, price_source, connection, start_date, end_date=datetime.date.today()):
+        self.history = [tuple for tuple in price_source.load_date_range(self.symbol, start_date, end_date=end_date)]
+
+
+class GroupHistory:
 
     def __init__ (self, symbols, history={}):
         self.symbols = list(history.keys())
@@ -74,15 +67,15 @@ class groupHistory:
         self.history_days = 0
 
     def __repr__ (self):
-        return 'groupHistory(%r, %r)' % (self.symbols+self.omitted_symbols, self.history)
+        return 'GroupHistory(%r, %r)' % (self.symbols+self.omitted_symbols, self.history)
 
     def __getitem__ (self, item):
         return self.history[item]
 
-    def load_to_date(self, connection, number, end_date=datetime.date.today()):
+    def load_to_date(self, price_source, number, end_date=datetime.date.today()):
         histories = []
-        for x in map(symbolHistory, self.symbols+self.omitted_symbols):
-            x.load_to_date(connection, number, end_date)
+        for x in map(SymbolHistory, self.symbols+self.omitted_symbols):
+            x.load_to_date(price_source, number, end_date)
             histories.append(x)                
 
         if len(histories) > 0:
@@ -111,7 +104,7 @@ class groupHistory:
     def matrix_of_returns(self):
         result = numpy.empty([len(self.symbols), self.history_days])
         for i in range(len(self.symbols)):
-            result[i] = self.history[self.symbols[i]].returns()
+            result[i] = list(self.history[self.symbols[i]].returns())
         return result
 
 

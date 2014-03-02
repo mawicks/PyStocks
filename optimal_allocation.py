@@ -3,14 +3,14 @@ from cvxopt import matrix
 from cvxopt.solvers import qp
 from cvxopt.solvers import options as solver_options
 import psycopg2
-import priceHistory
+import pricehistory
 import numpy
 import portfolio
 
 solver_options['show_progress'] = False
 
 def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=datetime.date(2099,1,1), iters=1000):
-    history = priceHistory.groupHistory(symbols)
+    history = pricehistory.GroupHistory(symbols)
 
     print("symbols=", symbols)
 

@@ -1,6 +1,6 @@
 import datetime
 import decimal
-import priceHistory
+import pricehistory
 
 class portfolio:
 
@@ -47,17 +47,17 @@ class portfolio:
 
         return portfolio([(s,result[s]) for s in result], self.cash-other.cash)
 
-    def values(self, connection):
-        gh = priceHistory.groupHistory(self.quantities.keys())
-        gh.load_to_date(connection, 1)
+    def values(self, price_source):
+        gh = pricehistory.GroupHistory(self.quantities.keys())
+        gh.load_to_date(price_source, 1)
         result = {}
         for s in sorted(gh.symbols):
             result[s] = self.quantities[s]*gh[s].last_price()
         return result
 
-    def value(self, connection):
+    def value(self, price_source):
         result = self.cash
-        values = self.values(connection)
+        values = self.values(price_source)
         for s in values.keys():
             print("%5s: %10.2f" % (s,values[s]))
             result += values[s]
@@ -65,18 +65,18 @@ class portfolio:
         print("total: %10.2f" % (result))
         return result
 
-    def allocation(self, connection):
+    def allocation(self, price_source):
         "Return a list of tuples of (symbol, percent_of_portfolio_value)"
-        v = float(self.value(connection))
-        values = self.values(connection)
+        v = float(self.value(price_source))
+        values = self.values(price_source)
         return [(s,float(values[s]/v)) for s in self.quantities.keys()]
 
     @classmethod
-    def from_allocation(cls, connection, allocation, cash_available):
+    def from_allocation(cls, price_source, allocation, cash_available):
         "Return a portfolio from an allocation"
         symbols = [a[0] for a in allocation]
-        ph = priceHistory.groupHistory(symbols)
-        ph.load_to_date(connection, 1)
+        ph = pricehistory.GroupHistory(symbols)
+        ph.load_to_date(price_source, 1)
         percent_allocated = sum([a[1] for a in allocation])
         equities = []
         cash_left = decimal.Decimal(cash_available)

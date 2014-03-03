@@ -20,11 +20,17 @@ class portfolio:
 
     def load (self, loader, reader):
         d = loader(reader)
-        self.cash = decimal.Decimal(d['cash'])
-        self.quantities = d['equities']
-        for symbol,quantity in self.quantities.items():
-            if not isinstance(quantity, int):
-                raise TypeError('Non-integer equity quantity in portfolio serialization')
+        if 'cash' in d:
+            self.cash = decimal.Decimal(d['cash'])
+        else:
+            self.cash = decimal.Decimal('0.00')
+        if 'equities' in d:
+            self.quantities = d['equities']
+            for symbol,quantity in self.quantities.items():
+                if not isinstance(quantity, int):
+                    raise TypeError('Non-integer equity quantity in portfolio serialization')
+        else:
+            self.quantities = {}
 
     def __add__ (self, other):
         result = {}

@@ -1,11 +1,14 @@
 import datetime
 from cvxopt import matrix
+import locale
 import psycopg2
 import numpy
 import portfolio
 import pricehistory
 import pricesource
 import optimal_allocation
+
+locale.setlocale(locale.LC_ALL,'')
 
 virtual_pf_20140112 = portfolio.portfolio ([('BZQ', 304),
                                    ('FXF', 159), 
@@ -104,7 +107,8 @@ current_pf = ameritrade_pf_20140212
 
 db_connection=psycopg2.connect(host="nas.wicksnet.us",dbname="stocks",user="mwicks")
 price_source=pricesource.StockDB(db_connection)
-print("Current portfolio value = ", current_pf.value(price_source))
+
+print("Current portfolio value = {0:10n}".format(current_pf.value(price_source)))
 
 watch_list = pricehistory.watchList()
 watch_list.load(db_connection)
@@ -141,20 +145,20 @@ print("Optimizing over top 10 symbols...")
 
 print("Done.")
 
-print("slope=%g; iters=%d" % (slope,iters))
-print("Mean/Std of optimal returns = %g/%g" % (numpy.mean(opt_returns),
-                                               numpy.std(opt_returns)))
-print("Mean/Std of optimal volatilities = %g/%g" % (numpy.mean(opt_vols),
-                                                    numpy.std(opt_vols)))
-print("Mean/Std of cross-returns = %g/%g" % (numpy.mean(cross_val_returns),
-                                             numpy.std(cross_val_returns)))
+print("slope={0}; iters={1}".format(slope,iters))
+print("Mean/Std of optimal returns = {0}/{1}".format(numpy.mean(opt_returns),
+                                                     numpy.std(opt_returns)))
+print("Mean/Std of optimal volatilities = {0}/{1}".format(numpy.mean(opt_vols),
+                                                          numpy.std(opt_vols)))
+print("Mean/Std of cross-returns = {0}/{1}".format(numpy.mean(cross_val_returns),
+                                                   numpy.std(cross_val_returns)))
 
 sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
 print(sorted_allocation[0:10])
 
 pf = portfolio.portfolio.from_allocation(price_source, sorted_allocation, current_pf.value(price_source))
 
-print(" Current portfolio: %s" % current_pf)
-print("Proposed portfolio: %s" % pf)
-print("    Buy/Sell order: %s" % (pf-current_pf))
-print("   Buy/Sell values: %s" % (pf-current_pf).values(price_source))
+print(" Current portfolio: {0!r}".format(current_pf))
+print("Proposed portfolio: {0!r}".format(pf))
+print("    Buy/Sell order: {0!r}".format((pf-current_pf)))
+print("   Buy/Sell values: {0!r}".format((pf-current_pf).values(price_source)))

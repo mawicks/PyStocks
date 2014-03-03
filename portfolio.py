@@ -59,10 +59,10 @@ class portfolio:
         result = self.cash
         values = self.values(price_source)
         for s in values.keys():
-            print("%5s: %10.2f" % (s,values[s]))
+            print("{0:>5s}: {1:10n}".format(s,values[s]))
             result += values[s]
-        print(" cash: %10.2f" % (self.cash))
-        print("total: %10.2f" % (result))
+        print(" cash: {0:10n}".format(self.cash))
+        print("total: {0:10n}".format(result))
         return result
 
     def allocation(self, price_source):

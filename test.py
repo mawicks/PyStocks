@@ -5,76 +5,23 @@ import locale
 import numpy
 import portfolio
 import pricehistory
-import pricesource
+import fakesource
 import optimal_allocation
 
 locale.setlocale(locale.LC_ALL,'')
 
-pf_2014_02_11 = portfolio.portfolio ([('RXL',731),
-				   ('TYD',1619),
-				   ('UGE',327)],
-                                  229683)
+current_pf = portfolio.portfolio ([], 100000.0)
+used_symbols = [ 'AHMA', 'AHMB', 'AHMC',
+                 'AHDA', 'AHFB', 'AHHC',
+                 'AGDA', 'AGDB',
+                 'AINA', 'AINB', 
+                 'AEGA', 'AEGB']
 
-pf_2014_02_12 = portfolio.portfolio ([('LBND', 578),
-				      ('RXL',731),
-				      ('TYD',1619),
-				      ('UGA',459),
-				      ('UGE',327)],
-                                      377979.58-195004.77)
-
-pf_2014_02_13 = portfolio.portfolio ([('BZQ',200),
-				      ('LBND',578),
-				      ('RXL',731),
-				      ('TYD',1619),
-				      ('UGA',459),
-				      ('UGE',327),
-				      ('XLV',750),
-				      ('YCS',300)],
-                                      229663.17-128999.79)
-
-pf_2014_02_14 = portfolio.portfolio ([('BZQ',200),
-				      ('EDV',269),
-				      ('LBND',578),
-				      ('RXL',731),
-				      ('TYD',1619),
-				      ('UGA',459),
-				      ('UGE',327),
-				      ('XLV',1456),
-				      ('YCS',300)],
-                                      100663.54-66548.05)
-
-pf_2014_02_18 = portfolio.portfolio ([('BZQ',200),
-				      ('EDV',269),
-				      ('LBND',578),
-				      ('QLD',147),
-				      ('RXL',731),
-				      ('TYD',1216),
-				      ('UGA',459),
-				      ('UGE',327),
-				      ('XLV',1456),
-				      ('YCS',300)],
-                                      64313.55-40577.93)
-
-pf_2014_02_19 = portfolio.portfolio ([('BZQ',600),
-				      ('EDV',354),
-				      ('LBND',423),
-				      ('QLD',147),
-				      ('RXL',731),
-				      ('TYD',1494),
-				      ('UGA',306),
-				      ('UGE',419),
-				      ('XLV',1809),
-				      ('YCS',606)],
-                                      972.99+2055.58)
-current_pf = pf_2014_02_19
-used_symbols = [ 'BZQ', 'EDV', 'LBND', 'RXL', 'TYD', 'UGA', 'UGE', 'XLV', 'YCS', 'QLD' ]
-
-db_connection=psycopg2.connect(host="nas.wicksnet.us",dbname="stocks",user="mwicks")
-price_source=pricesource.StockDB(db_connection)
+price_source=fakesource.TestSource()
 print("Current portfolio value = {0:10n}".format(current_pf.value(price_source)))
 
-watch_list = pricehistory.watchList()
-watch_list.load(db_connection)
+# watch_list = pricehistory.watchList()
+# watch_list.load(db_connection)
 
 slope=15
 iters=10000
@@ -115,7 +62,7 @@ print(sorted_allocation)
 
 pf = portfolio.portfolio.from_allocation(price_source, sorted_allocation, current_pf.value(price_source))
 
-print(" Current portfolio: {0}".format(current_pf)
-print("Proposed portfolio: {0}".format(pf)
-print("    Buy/Sell order: {0}".format(pf-current_pf)
-print("   Buy/Sell values: {0}".format((pf-current_pf).values(price_source))
+print(" Current portfolio: {0}".format(current_pf))
+print("Proposed portfolio: {0}".format(pf))
+print("    Buy/Sell order: {0}".format(pf-current_pf))
+print("   Buy/Sell values: {0}".format((pf-current_pf).values(price_source)))

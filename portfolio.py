@@ -69,7 +69,7 @@ class portfolio:
     def value(self, price_source):
         result = self.cash
         values = self.values(price_source)
-        for s in values.keys():
+        for s in sorted(values.keys()):
             print("{0:>5s}: {1:10n}".format(s,values[s]))
             result += values[s]
         print(" cash: {0:10n}".format(self.cash))

@@ -87,4 +87,4 @@ pf = portfolio.portfolio.from_allocation(price_source, sorted_allocation, curren
 print(" Current portfolio: {0}".format(current_pf))
 print("Proposed portfolio: {0}".format(pf))
 print("    Buy/Sell order: {0}".format(pf-current_pf))
-print("   Buy/Sell values: {0}".format((pf-current_pf).values(price_source)))
+print("   Buy/Sell values: {0}".format(sorted((pf-current_pf).values(price_source).items(), key=lambda s: s[1])))

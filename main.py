@@ -1,11 +1,12 @@
 import datetime
 from cvxopt import matrix
+import json
 import locale
-import psycopg2
 import numpy
 import portfolio
 import pricehistory
 import pricesource
+import psycopg2
 import optimal_allocation
 
 locale.setlocale(locale.LC_ALL,'')
@@ -104,6 +105,8 @@ ameritrade_pf_20140212 = portfolio.portfolio ([('BZQ', 373),
                                      1887.64-0.0)
 
 current_pf = ameritrade_pf_20140212
+with open("ameritrade-after-tax.pf", "w") as file:
+    current_pf.dump(json.dump, file)
 
 db_connection=psycopg2.connect(host="nas.wicksnet.us",dbname="stocks",user="mwicks")
 price_source=pricesource.StockDB(db_connection)

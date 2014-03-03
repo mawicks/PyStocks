@@ -4,9 +4,9 @@ import pricehistory
 
 class portfolio:
 
-    def __init__ (self, equities, cash = 0.0):
+    def __init__ (self, equities=[], cash = 0.0):
         "equities must be a list of tuples of (symbol, quantity)"
-        self.cash = decimal.Decimal(cash)
+        self.cash = decimal.Decimal(cash).quantize(decimal.Decimal('0.01'))
         self.quantities = {}
         for e in equities:
             if e[1] != 0:
@@ -14,6 +14,17 @@ class portfolio:
 
     def __repr__ (self):
         return 'portfolio(%s, %s)' % ([(s,self.quantities[s]) for s in sorted(self.quantities.keys())], self.cash)
+
+    def dump (self, dumper, writer):
+        dumper(dict(equities=self.quantities, cash=str(self.cash)), writer, indent=5, sort_keys=True)
+
+    def load (self, loader, reader):
+        d = loader(reader)
+        self.cash = decimal.Decimal(d['cash'])
+        self.quantities = d['equities']
+        for symbol,quantity in self.quantities.items():
+            if not isinstance(quantity, int):
+                raise TypeError('Non-integer equity quantity in portfolio serialization')
 
     def __add__ (self, other):
         result = {}

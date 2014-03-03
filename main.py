@@ -22,9 +22,12 @@ def usage():
 if len(sys.argv) < 2:
     usage()
 
-parser = argparse.ArgumentParser(description='Optimize a portfolio.')
-parser.add_argument ('-c', '--use_current_symbols', action='store_true', help='Optimize over current portfolio symbols')
-parser.add_argument ('portfolio', help='Portfolio file name')
+parser = argparse.ArgumentParser(description='Optimize a portfolio.',
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument ('-c', '--use_current_symbols', action='store_true', help='optimize over current portfolio symbols')
+parser.add_argument ('-s', '--slope', default=15, help="slope of line in variance-return plane having constant optimization penalty (smaller slope means greater return")
+parser.add_argument ('-i', '--iterations', default=10000, help="number of sampling iterations")
+parser.add_argument ('portfolio', help='portfolio file name')
 args = parser.parse_args()
 
 # with open("ameritrade-ira.pf", "w") as file:
@@ -37,9 +40,6 @@ db_connection=psycopg2.connect(host="nas.wicksnet.us",dbname="stocks",user="mwic
 price_source=pricesource.StockDB(db_connection)
 print("Current portfolio value = {0:10n}".format(current_pf.value(price_source)))
 
-slope=15
-iters=10000
-
 if args.use_current_symbols:
     used_symbols = current_pf.symbols()
 else:
@@ -49,10 +49,10 @@ else:
     print("Optimizing over all watch list symbols...")
     (allocation, opt_returns, opt_vols, cross_val_returns) = optimal_allocation.optimal_allocation(price_source,
                                                                                                    watch_list.symbols(),
-                                                                                                   slope=slope,
+                                                                                                   slope=args.slope,
                                                                                                    days=750,
                                                                                                    end_date=datetime.date(2099,1,1),
-                                                                                                   iters=iters)
+                                                                                                   iters=args.iterations)
 
     sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
     best_symbols = sorted([s[0] for s in sorted_allocation[0:10]])
@@ -64,14 +64,14 @@ print ("Portfolio optimization over following symbols: {0}".format(used_symbols)
 
 (allocation, opt_returns, opt_vols, cross_val_returns) = optimal_allocation.optimal_allocation(price_source,
                                                                                                used_symbols,
-                                                                                               slope=slope,
+                                                                                               slope=args.slope,
                                                                                                days=750,
                                                                                                end_date=datetime.date(2099,1,1),
-                                                                                               iters=iters)
+                                                                                               iters=args.iterations)
 
 print("Done.")
 
-print("slope={0}; iters={1}".format(slope,iters))
+print("slope={0}; iters={1}".format(args.slope,args.iterations))
 print("Mean/Std of optimal returns = {0}/{1}".format(numpy.mean(opt_returns),
                                                    numpy.std(opt_returns)))
 print("Mean/Std of optimal volatilities = {0}/{1}".format(numpy.mean(opt_vols),

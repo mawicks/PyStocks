@@ -2,6 +2,7 @@ import datetime
 from cvxopt import matrix
 from cvxopt.solvers import qp
 from cvxopt.solvers import options as solver_options
+from sklearn import cross_validation
 import psycopg2
 import pricehistory
 import numpy
@@ -9,7 +10,7 @@ import portfolio
 
 solver_options['show_progress'] = False
 
-def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=datetime.date(2099,1,1), iters=1000):
+def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=datetime.date(2099,1,1), iters=1000, sampler=cross_validation.ShuffleSplit):
     history = pricehistory.GroupHistory(symbols)
 
     print("symbols=", symbols)
@@ -24,11 +25,10 @@ def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=date
 
     cum_allocations = {}
 
-    for trial in range(iters):
-        numpy.random.shuffle(all_returns)
-
-        train_returns = all_returns[0::2,:].T
-        test_returns = all_returns[1::2,:].T
+    boot_strap = sampler(days, iters, train_size=0.5, test_size=0.5)
+    for train_index,test_index in boot_strap:
+        train_returns = all_returns[train_index,:].T
+        test_returns = all_returns[test_index,:].T
 
         mean_train_returns = numpy.mean(train_returns,1)
         cov_train_returns = numpy.cov(train_returns)

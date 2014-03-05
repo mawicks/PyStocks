@@ -1,5 +1,6 @@
 import argparse
 from cvxopt import matrix
+from sklearn import cross_validation
 import datetime
 import json
 import locale
@@ -17,6 +18,7 @@ parser = argparse.ArgumentParser(description='Optimize a portfolio.',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument ('-c', '--use_current_symbols', action='store_true', help='optimize over current portfolio symbols')
 parser.add_argument ('-s', '--slope', default=15, help="slope of line in variance-return plane having constant optimization penalty (smaller slope means greater return")
+parser.add_argument ('-b', '--bootstrap', action='store_true', help='Use bootstrap samples instead of random splits')
 parser.add_argument ('-i', '--iterations', default=10000, help="number of sampling iterations")
 parser.add_argument ('portfolio', help='portfolio file name')
 args = parser.parse_args()
@@ -32,6 +34,11 @@ db_connection=psycopg2.connect(host="nas.wicksnet.us",dbname="stocks",user="mwic
 price_source=pricesource.StockDB(db_connection)
 print("Current portfolio value = {0:10n}".format(current_pf.value(price_source)))
 
+if args.bootstrap:
+    sampler = cross_validation.Bootstrap
+else:
+    sampler = cross_validation.ShuffleSplit
+
 if args.use_current_symbols:
     used_symbols = current_pf.symbols()
 else:
@@ -44,7 +51,9 @@ else:
                                                                                                    slope=args.slope,
                                                                                                    days=750,
                                                                                                    end_date=datetime.date(2099,1,1),
-                                                                                                   iters=args.iterations)
+                                                                                                   iters=args.iterations,
+                                                                                                   sampler=sampler
+                                                                                                   )
 
     sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
     best_symbols = sorted([s[0] for s in sorted_allocation[0:10]])
@@ -59,7 +68,9 @@ print ("Portfolio optimization over following symbols: {0}".format(used_symbols)
                                                                                                slope=args.slope,
                                                                                                days=750,
                                                                                                end_date=datetime.date(2099,1,1),
-                                                                                               iters=args.iterations)
+                                                                                               iters=args.iterations,
+                                                                                               sampler=sampler
+                                                                                               )
 
 print("Done.")
 

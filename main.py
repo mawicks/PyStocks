@@ -13,6 +13,7 @@ import optimal_allocation
 import sys
 
 locale.setlocale(locale.LC_ALL,'')
+today = datetime.date.today()
 
 parser = argparse.ArgumentParser(description='Optimize a portfolio.',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -50,7 +51,7 @@ else:
                                                                                                    watch_list.symbols(),
                                                                                                    slope=args.slope,
                                                                                                    days=750,
-                                                                                                   end_date=datetime.date(2099,1,1),
+                                                                                                   end_date=today,
                                                                                                    iters=args.iterations,
                                                                                                    sampler=sampler
                                                                                                    )
@@ -67,7 +68,7 @@ print ("Portfolio optimization over following symbols: {0}".format(used_symbols)
                                                                                                used_symbols,
                                                                                                slope=args.slope,
                                                                                                days=750,
-                                                                                               end_date=datetime.date(2099,1,1),
+                                                                                               end_date=today,
                                                                                                iters=args.iterations,
                                                                                                sampler=sampler
                                                                                                )

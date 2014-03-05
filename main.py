@@ -1,6 +1,6 @@
 import argparse
-import datetime
 from cvxopt import matrix
+import datetime
 import json
 import locale
 import numpy
@@ -13,15 +13,6 @@ import sys
 
 locale.setlocale(locale.LC_ALL,'')
 
-current_pf = portfolio.portfolio()
-
-def usage():
-    print ("{0} <portfolio_filename>".format(sys.argv[0]))
-    sys.exit()
-
-if len(sys.argv) < 2:
-    usage()
-
 parser = argparse.ArgumentParser(description='Optimize a portfolio.',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument ('-c', '--use_current_symbols', action='store_true', help='optimize over current portfolio symbols')
@@ -33,6 +24,7 @@ args = parser.parse_args()
 # with open("ameritrade-ira.pf", "w") as file:
 #    current_pf.dump(json.dump, file)
 
+current_pf = portfolio.portfolio()
 with open(args.portfolio, "r") as file:
     current_pf.load(json.load, file)
 

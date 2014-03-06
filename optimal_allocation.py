@@ -25,7 +25,7 @@ def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=date
 
     cum_allocations = {}
 
-    boot_strap = sampler(days, iters, train_size=0.5, test_size=0.5)
+    boot_strap = sampler(days, iters, train_size=0.5)
     for train_index,test_index in boot_strap:
         train_returns = all_returns[train_index,:].T
         test_returns = all_returns[test_index,:].T

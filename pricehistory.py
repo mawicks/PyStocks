@@ -65,6 +65,8 @@ class GroupHistory:
         self.omitted_symbols = [s for s in symbols if s not in history.keys()]
         self.history = history
         self.history_days = 0
+        self.first_date = None
+        self.last_date = None
 
     def __repr__ (self):
         return 'GroupHistory(%r, %r)' % (self.symbols+self.omitted_symbols, self.history)
@@ -78,17 +80,29 @@ class GroupHistory:
             x.load_to_date(price_source, number, end_date)
             histories.append(x)                
 
-        if len(histories) > 0:
-            first_date = max([x.first_date() for x in histories if x.days()==number])
-            last_date = max([x.last_date() for x in histories if x.days()==number])
+        last_dates = [x.last_date() for x in histories if x.days()==number]
+        if last_dates != []:
+            self.last_date = max(last_dates)
+            date_counts = {}
+            for x in histories:
+                if x.last_date() == self.last_date and x.days() == number:
+                    if x.first_date() in date_counts:
+                        date_counts[x.first_date()] += 1
+                    else:
+                        date_counts[x.first_date()] = 1
+            self.first_date = max(date_counts, key=lambda date: date_counts[date])
             self.history_days = number
+
+            for x in histories:
+                if x.days() == number and (x.first_date() != self.first_date or x.last_date() != self.last_date):
+                    print ("problem? symbol:{0} has {1} days, but first_date {2} != {3} or last_date {4} != {5}".format(x.symbol, self.history_days, x.first_date(), self.first_date, x.last_date(), self.last_date, x.last_date()))
         else:
-            first_date = None
-            last_date = None
+            self.first_date = None
+            self.last_date = None
 
         # Remove any symbol (and its history) if its first_date() doesn't match.
         self.omitted_symbols = [x.symbol for x in histories
-                                if x.first_date()!=first_date or x.last_date()!=last_date]
+                                if x.first_date()!=self.first_date or x.last_date()!=self.last_date]
 
         if len(self.omitted_symbols) > 0:
             print("Removing symbols with missing or outdated data: " + ", ".join(self.omitted_symbols))
@@ -100,6 +114,12 @@ class GroupHistory:
                 self.history[x.symbol] = x
 
         self.symbols = [x.symbol for x in histories if x.symbol not in self.omitted_symbols]
+
+    def last_date():
+        return self.last_date
+
+    def first_date():
+        return self.first_date
                 
     def matrix_of_returns(self):
         result = numpy.empty([len(self.symbols), self.history_days])

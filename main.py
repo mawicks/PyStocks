@@ -10,6 +10,7 @@ import pricehistory
 import pricesource
 import psycopg2
 import optimal_allocation
+import specialsampling
 import sys
 
 locale.setlocale(locale.LC_ALL,'')
@@ -18,10 +19,15 @@ today = datetime.date.today()
 parser = argparse.ArgumentParser(description='Optimize a portfolio.',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument ('-c', '--use_current_symbols', action='store_true', help='optimize over current portfolio symbols')
-parser.add_argument ('-s', '--slope', default=15, help="slope of line in variance-return plane having constant optimization penalty (smaller slope means greater return")
-parser.add_argument ('-b', '--bootstrap', action='store_true', help='Use bootstrap samples instead of random splits')
-parser.add_argument ('-i', '--iterations', default=10000, help="number of sampling iterations")
+parser.add_argument ('-s', '--slope', type=int, default=15, help="slope of line in variance-return plane having constant optimization penalty (smaller slope means greater return")
 parser.add_argument ('portfolio', help='portfolio file name')
+group = parser.add_mutually_exclusive_group()
+group.add_argument ('-b', '--bootstrap', action='store_true', help='Use bootstrap samples instead of random splits')
+group.add_argument ('-t', '--triangular', action='store_true', help='Use bootstrap samples from a triangular distribution.')
+
+parser.add_argument ('-i', '--iterations', type=int, default=10000, help="number of sampling iterations")
+parser.add_argument ('-d', '--days', type=int, default=756, help="number of days of history to use in training")
+parser.add_argument ('-p', '--portfolio-size', type=int, default=10, help="number of symbols to keep in the portfolio")
 args = parser.parse_args()
 
 # with open("ameritrade-ira.pf", "w") as file:
@@ -37,6 +43,8 @@ print("Current portfolio value = {0:10n}".format(current_pf.value(price_source))
 
 if args.bootstrap:
     sampler = cross_validation.Bootstrap
+elif args.triangular:
+    sampler = specialsampling.triangular
 else:
     sampler = cross_validation.ShuffleSplit
 
@@ -50,14 +58,14 @@ else:
     (allocation, opt_returns, opt_vols, cross_val_returns) = optimal_allocation.optimal_allocation(price_source,
                                                                                                    watch_list.symbols(),
                                                                                                    slope=args.slope,
-                                                                                                   days=750,
+                                                                                                   days=args.days,
                                                                                                    end_date=today,
                                                                                                    iters=args.iterations,
                                                                                                    sampler=sampler
                                                                                                    )
 
     sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
-    best_symbols = sorted([s[0] for s in sorted_allocation[0:10]])
+    best_symbols = sorted([s[0] for s in sorted_allocation[0:args.portfolio_size]])
     print ("best_symbols = ", best_symbols)
 
     used_symbols = best_symbols
@@ -67,7 +75,7 @@ print ("Portfolio optimization over following symbols: {0}".format(used_symbols)
 (allocation, opt_returns, opt_vols, cross_val_returns) = optimal_allocation.optimal_allocation(price_source,
                                                                                                used_symbols,
                                                                                                slope=args.slope,
-                                                                                               days=750,
+                                                                                               days=args.days,
                                                                                                end_date=today,
                                                                                                iters=args.iterations,
                                                                                                sampler=sampler

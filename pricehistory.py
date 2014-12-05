@@ -86,10 +86,7 @@ class GroupHistory:
             date_counts = {}
             for x in histories:
                 if x.last_date() == self.last_date and x.days() == number:
-                    if x.first_date() in date_counts:
-                        date_counts[x.first_date()] += 1
-                    else:
-                        date_counts[x.first_date()] = 1
+                    date_counts[x.first_date()] = date_counts.get(x.first_date(), 0) + 1
             self.first_date = max(date_counts, key=lambda date: date_counts[date])
             self.history_days = number
 
@@ -102,7 +99,7 @@ class GroupHistory:
 
         # Remove any symbol (and its history) if its first_date() doesn't match.
         self.omitted_symbols = [x.symbol for x in histories
-                                if x.first_date()!=self.first_date or x.last_date()!=self.last_date]
+                                if x.first_date()!=self.first_date or x.last_date()!=self.last_date or x.days() != number]
 
         if len(self.omitted_symbols) > 0:
             print("Removing symbols with missing or outdated data: " + ", ".join(self.omitted_symbols))

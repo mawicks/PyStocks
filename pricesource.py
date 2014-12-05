@@ -14,7 +14,7 @@ class StockDB:
                            " ORDER by h.date DESC "
                            " LIMIT %s ",
                            (symbol, end_date, number))
-            result = reversed(cursor.fetchall())
+            result = tuple(reversed(cursor.fetchall()))
         return result
         
     def load_date_range(self, symbol, start_date, end_date=datetime.date.today()):

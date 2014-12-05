@@ -25,6 +25,7 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument ('-b', '--bootstrap', action='store_true', help='Use bootstrap samples instead of random splits')
 group.add_argument ('-t', '--triangular', action='store_true', help='Use bootstrap samples from a triangular distribution.')
 
+parser.add_argument ('-m', '--max', type=float, default=1.0, help='Maximum allocation for any single equity.')
 parser.add_argument ('-i', '--iterations', type=int, default=10000, help="number of sampling iterations")
 parser.add_argument ('-d', '--days', type=int, default=756, help="number of days of history to use in training")
 parser.add_argument ('-p', '--portfolio-size', type=int, default=10, help="number of symbols to keep in the portfolio")
@@ -60,10 +61,11 @@ else:
                                                                                                    slope=args.slope,
                                                                                                    days=args.days,
                                                                                                    end_date=today,
+                                                                                                   max_allocation=args.max,
                                                                                                    iters=args.iterations,
                                                                                                    sampler=sampler
                                                                                                    )
-
+    print ('allocation:', allocation)
     sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
     best_symbols = sorted([s[0] for s in sorted_allocation[0:args.portfolio_size]])
     print ("best_symbols = ", best_symbols)
@@ -78,6 +80,7 @@ print ("Portfolio optimization over following symbols: {0}".format(used_symbols)
                                                                                                days=args.days,
                                                                                                end_date=today,
                                                                                                iters=args.iterations,
+                                                                                               max_allocation=args.max,
                                                                                                sampler=sampler
                                                                                                )
 

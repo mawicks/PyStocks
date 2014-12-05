@@ -10,7 +10,14 @@ import portfolio
 
 solver_options['show_progress'] = False
 
-def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=datetime.date(2099,1,1), iters=1000, sampler=cross_validation.ShuffleSplit):
+def optimal_allocation(db_connection, 
+                       symbols,
+                       slope=15, 
+                       days=750,
+                       end_date=datetime.date(2099,1,1),
+                       iters=1000, 
+                       max_allocation=1.0,
+                       sampler=cross_validation.ShuffleSplit):
     history = pricehistory.GroupHistory(symbols)
 
     print("symbols=", symbols)
@@ -42,8 +49,9 @@ def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=date
 # Following parameters maximize mu - slope*sigma^2
         P = 2 * slope * matrix(cov_train_returns)
         q = -matrix(mean_train_returns)
-        G = -matrix(numpy.identity(n))
-        h = matrix(0.0, (n,1))
+        G = matrix(numpy.vstack((-numpy.identity(n),
+                                 numpy.identity(n))))
+        h = matrix(n*[0.0] + n*[max_allocation], (2*n,1))
         A = matrix(1.0, (1,n))
         b = matrix(1.0, (1,1))
 
@@ -52,7 +60,7 @@ def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=date
             raise Exception("Quadratic solver failed" + result['status'])
 
         x = qp_result['x']
-
+        
         for i in range(n):
             if history.symbols[i] in cum_allocations:
                 cum_allocations[history.symbols[i]] += x[i]
@@ -67,5 +75,4 @@ def optimal_allocation(db_connection, symbols, slope=15, days=750, end_date=date
 
     total = sum([cum_allocations[s] for s in history.symbols])
     allocation  = [ (s,cum_allocations[s]/total) for s in history.symbols ]
-
     return (allocation, opt_returns, opt_vols, cross_val_returns)

@@ -38,7 +38,7 @@ current_pf = portfolio.portfolio()
 with open(args.portfolio, "r") as file:
     current_pf.load(json.load, file)
 
-db_connection=psycopg2.connect(host="nas.wicksnet.us",dbname="stocks",user="mwicks")
+db_connection=psycopg2.connect(host="localhost",dbname="stocks",user="mwicks")
 price_source=pricesource.StockDB(db_connection)
 print("Current portfolio value = {0:10n}".format(current_pf.value(price_source)))
 

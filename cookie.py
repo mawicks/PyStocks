@@ -48,3 +48,17 @@ dataFile = os.path.join(dataDir,'yahoo_cookie.yml')
 
 with open(dataFile,'w') as fid:
     yaml.dump(data,fid)
+
+# Grab APL history as a test.
+start=1230786000
+end=1495252800
+symbol="GOOG"
+
+history_url = ( 'https://query1.finance.yahoo.com/v7/finance/download/{symbol}?period1={start}&period2={end}&interval=1d&events=history&crumb={crumb}'
+                .format(**locals()) )
+# history_url = ( 'https://query1.finance.yahoo.com/v7/finance/download/APL?period1={start}&period2={end}&interval=1d&events=history&crumb={crumb}'
+#                 .format(**locals()) )
+
+print('history_url', history_url)
+r = requests.get(history_url, cookies={ 'B': cookie})
+print('text: ', r.text, '\n')

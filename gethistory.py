@@ -194,9 +194,9 @@ def updateSymbolHistory(symbol, overwrite=False):
                      previous.AdjClose <= 0.0 or
                      current.AdjClose > 99999.99 or
                      previous.AdjClose > 99999.99 ):
-                    daily_return = exp(log(current.Close/previous.Close))
+                    daily_return = log(current.Close/previous.Close) / days
                 else:
-                    daily_return = exp(log(current.AdjClose/previous.AdjClose) / days)
+                    daily_return = log(current.AdjClose/previous.AdjClose) / days
                         
             except Exception as e:
                 print(e)
@@ -207,8 +207,8 @@ def updateSymbolHistory(symbol, overwrite=False):
 
         previous = current
             
-    if count > 1:
-        print("Added {0} record{1}".format(count-1, "s" if count > 2 else ""))
+    if count > 0:
+        print("Added {0} new record{1}".format(count, "s" if count > 1 else ""))
         print('Updating summary record for {0} to show history from {1} to {2}'
               .format(symbolID,
                       previousEarliestDate if previousEarliestDate != None else earliestDate,
@@ -228,6 +228,7 @@ def updateWatchListHistory(overwrite=False):
         cursor.execute(getWatchList)
         for (result,) in cursor.fetchall():
             updateSymbolHistory(result, overwrite)
+            time.sleep(1)
 
 overwrite = False
 if __name__ == "__main__":

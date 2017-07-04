@@ -1,4 +1,7 @@
 import datetime
+from collections import namedtuple
+
+historyType = namedtuple('History', ['Date', 'Close', 'DailyReturn'])
 
 class StockDB:
     def __init__(self, connection):

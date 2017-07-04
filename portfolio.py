@@ -66,8 +66,10 @@ class portfolio:
 
     def values(self, price_source):
         gh = pricehistory.GroupHistory(self.quantities.keys())
+        print('gh', gh)
         gh.load_to_date(price_source, 1)
         result = {}
+        print(gh.symbols)
         for s in sorted(gh.symbols):
             result[s] = self.quantities[s]*gh[s].last_price()
         return result

@@ -1,7 +1,7 @@
 import argparse
 from cvxopt import matrix
 from sklearn import cross_validation
-import datetime
+import datetime as dt
 import json
 import locale
 import numpy
@@ -14,25 +14,31 @@ import specialsampling
 import sys
 
 locale.setlocale(locale.LC_ALL,'')
-today = datetime.date.today()
+today = dt.date.today()
 
 parser = argparse.ArgumentParser(description='Optimize a portfolio.',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument ('-c', '--use_current_symbols', action='store_true', help='optimize over current portfolio symbols')
-parser.add_argument ('-s', '--slope', type=int, default=15, help="slope of line in variance-return plane having constant optimization penalty (smaller slope means greater return")
+parser.add_argument ('-s', '--slope', type=float, default=15, help="slope of line in variance-return plane having constant optimization penalty (smaller slope means greater return")
 parser.add_argument ('portfolio', help='portfolio file name')
+
+# Add a mutually exclusive group for the window
 group = parser.add_mutually_exclusive_group()
 group.add_argument ('-b', '--bootstrap', action='store_true', help='Use bootstrap samples instead of random splits')
 group.add_argument ('-t', '--triangular', action='store_true', help='Use bootstrap samples from a triangular distribution.')
 
+parser.add_argument ('-B', '--backtest', type=int, default=0, help='Pretend that now() is this many days ago')
 parser.add_argument ('-m', '--max', type=float, default=1.0, help='Maximum allocation for any single equity.')
 parser.add_argument ('-i', '--iterations', type=int, default=10000, help="number of sampling iterations")
 parser.add_argument ('-d', '--days', type=int, default=756, help="number of days of history to use in training")
 parser.add_argument ('-p', '--portfolio-size', type=int, default=10, help="number of symbols to keep in the portfolio")
+parser.add_argument ('-o', '--output', type=argparse.FileType("w"), help="output portfolio file.")
 args = parser.parse_args()
 
 # with open("ameritrade-ira.pf", "w") as file:
 #    current_pf.dump(json.dump, file)
+
+end_date = today - dt.timedelta(days=args.backtest)
 
 current_pf = portfolio.portfolio()
 with open(args.portfolio, "r") as file:
@@ -40,7 +46,7 @@ with open(args.portfolio, "r") as file:
 
 db_connection=psycopg2.connect(host="localhost",dbname="stocks",user="mwicks")
 price_source=pricesource.StockDB(db_connection)
-print("Current portfolio value = {0:10n}".format(current_pf.value(price_source)))
+print("\nCurrent portfolio value = {0:10n}".format(current_pf.value(price_source, end_date)))
 
 if args.bootstrap:
     sampler = cross_validation.Bootstrap
@@ -60,7 +66,7 @@ else:
                                                                                                    watch_list.symbols(),
                                                                                                    slope=args.slope,
                                                                                                    days=args.days,
-                                                                                                   end_date=today,
+                                                                                                   end_date=end_date,
                                                                                                    max_allocation=args.max,
                                                                                                    iters=args.iterations,
                                                                                                    sampler=sampler
@@ -69,7 +75,6 @@ else:
     sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
     best_symbols = sorted([s[0] for s in sorted_allocation[0:args.portfolio_size]])
     print ("best_symbols = ", best_symbols)
-
     used_symbols = best_symbols
 
 print ("Portfolio optimization over following symbols: {0}".format(used_symbols))
@@ -78,7 +83,7 @@ print ("Portfolio optimization over following symbols: {0}".format(used_symbols)
                                                                                                used_symbols,
                                                                                                slope=args.slope,
                                                                                                days=args.days,
-                                                                                               end_date=today,
+                                                                                               end_date=end_date,
                                                                                                iters=args.iterations,
                                                                                                max_allocation=args.max,
                                                                                                sampler=sampler
@@ -97,9 +102,13 @@ print("Mean/Std of cross-returns = {0}/{1}".format(numpy.mean(cross_val_returns)
 sorted_allocation = sorted(allocation,key=lambda s: s[1], reverse=True)
 print(sorted_allocation)
 
-pf = portfolio.portfolio.from_allocation(price_source, sorted_allocation, current_pf.value(price_source))
+pf = portfolio.portfolio.from_allocation(price_source, sorted_allocation, current_pf.value(price_source, end_date), end_date)
 
 print("\n Current portfolio: {0}".format(current_pf))
 print("\nProposed portfolio: {0}".format(pf))
 print("\n    Buy/Sell order: {0}".format(pf-current_pf))
 print("\n   Buy/Sell values: {0}".format(sorted((pf-current_pf).values(price_source).items(), key=lambda s: s[1])))
+
+if args.output:
+    pf.dump(json.dump, args.output)
+    

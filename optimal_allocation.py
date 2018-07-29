@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 from cvxopt import matrix
 from cvxopt.solvers import qp
 from cvxopt.solvers import options as solver_options
@@ -14,7 +14,7 @@ def optimal_allocation(db_connection,
                        symbols,
                        slope=15, 
                        days=750,
-                       end_date=datetime.date(2099,1,1),
+                       end_date=dt.date.today(),
                        iters=1000, 
                        max_allocation=1.0,
                        sampler=cross_validation.ShuffleSplit):

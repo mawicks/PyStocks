@@ -98,6 +98,7 @@ class GroupHistory:
         for count, s in enumerate(all_symbols):
             x = SymbolHistory(s)
             x.load_to_date(price_source, max(number+7, int(1.3*number)), end_date)
+            print("{0}: date range: {1} - {2}".format(s, x.first_date(), x.last_date()))
             
             if x.days() < number:
                 print('*** Symbol {0} has only {1} days of history'.format(s, x.days()))
@@ -113,9 +114,10 @@ class GroupHistory:
                 histories.append(x)
             else:
                 test = self.common_dates.intersection(x.all_dates())
+                print("New range: {0} - {1}".format(min(test), max(test)))
                 if len(test) < number:
-                    print('*** Problem with symbol {0}: Only {1}/{2} overlapping dates.'.format(s, len(test), number))
-                    print('*** Problem dates are {0}'.format(sorted(x.all_dates())))
+                    print('*** Omitting symbol {0}: Only {1}/{2} overlapping dates.'.format(s, len(test), number))
+                    print('*** Dates are {0}'.format(sorted(x.all_dates())))
                     self.omitted_symbols.append(s)
                 else:
                     self.common_dates = test
@@ -123,6 +125,7 @@ class GroupHistory:
                     histories.append(x)
 
         self.common_dates = set(sorted(self.common_dates, reverse=True)[:number])
+        print('Using selected dates from {0} to {1}'.format(min(self.common_dates), max(self.common_dates)))
 
         for h in histories:
             h.keep_only(self.common_dates)
@@ -139,7 +142,7 @@ class GroupHistory:
 
             for x in histories:
                 if x.days() == number and (x.first_date() != self.first_date or x.last_date() != self.last_date):
-                    print ("problem? symbol:{0} has {1} days, but first_date {2} != {3} or last_date {4} != {5}".format(x.symbol(), self.history_days, x.first_date(), self.first_date, x.last_date(), self.last_date, x.last_date()))
+                    print ("Problem? symbol:{0} has {1} days, but first_date {2} != {3} or last_date {4} != {5}".format(x.symbol(), self.history_days, x.first_date(), self.first_date, x.last_date(), self.last_date, x.last_date()))
                     print(x)
         else:
             self.first_date = None

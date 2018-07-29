@@ -1,11 +1,14 @@
+SLOPE=2
+
 DATE=`date -I`
 TMP=`mktemp`
 DAYS=1008
 DAYS=1512
 RECIPIENT=mawicks@gmail.com
 SCRIPT=/home/mwicks/Projects/PyStocks-public/main.py
+
 # if python3 $SCRIPT -c /home/mwicks/Projects/PyStocks/ameritrade-ira.pf > $TMP
-if python3 $SCRIPT -s 2 -t -d $DAYS --max 0.2 -c /home/mwicks/Projects/PyStocks/ameritrade-after-tax.pf > $TMP
+if python3 $SCRIPT -s $SLOPE -t -d $DAYS --max 0.2 -c /home/mwicks/Projects/PyStocks/ameritrade-after-tax.pf > $TMP
 then
    mail -s "$DATE Daily Stock Rebalance" $RECIPIENT < $TMP
    rm -f $TMP

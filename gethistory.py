@@ -34,10 +34,10 @@ import psycopg2
 #url_date_range = "startdate=2011-01-01";
 #url = "{url_base}?{url_symbol_query}&{url_date_range}&output=csv";
 
-cookie = 'chjcoh1cl38jp&b=3&s=dv'
+cookie = 'a9ktnmpcumdqi&b=3&s=aq'
 cookies = {'B': cookie}
-crumb = 'b3OtsEsShyY'
-    
+crumb = 'iMNf0GS8ilT'
+
 def historyURL(symbol, startdate = None, enddate = datetime.date.today()):
     '''
     Generates a url to download stock history from Yahoo

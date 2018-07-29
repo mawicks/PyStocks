@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import decimal
 import pricehistory
 
@@ -64,19 +64,24 @@ class portfolio:
 
         return portfolio([(s,result[s]) for s in result], self.cash-other.cash)
 
-    def values(self, price_source):
+    def values(self, price_source, end_date=dt.date.today()):
         gh = pricehistory.GroupHistory(self.quantities.keys())
         print('gh', gh)
-        gh.load_to_date(price_source, 1)
+        gh.load_to_date(price_source, 1, end_date=end_date)
         result = {}
-        print(gh.symbols)
+#        print(gh.symbols)
+        print('\nUsing following prices:')
+        for s in sorted(gh.symbols):
+            print('{0}@{1}'.format(s, gh[s].last_price()))
+            
         for s in sorted(gh.symbols):
             result[s] = self.quantities[s]*gh[s].last_price()
         return result
 
-    def value(self, price_source):
+    def value(self, price_source, end_date=dt.date.today()):
         result = self.cash
-        values = self.values(price_source)
+        values = self.values(price_source, end_date)
+        print('\nAllocation by value:')
         for s in sorted(values.keys()):
             print("{0:>5s}: {1:10n}".format(s,values[s]))
             result += values[s]
@@ -91,11 +96,11 @@ class portfolio:
         return [(s,float(values[s]/v)) for s in self.quantities.keys()]
 
     @classmethod
-    def from_allocation(cls, price_source, allocation, cash_available):
+    def from_allocation(cls, price_source, allocation, cash_available, end_date=dt.date.today()):
         "Return a portfolio from an allocation"
         symbols = [a[0] for a in allocation]
         ph = pricehistory.GroupHistory(symbols)
-        ph.load_to_date(price_source, 1)
+        ph.load_to_date(price_source, 1, end_date=end_date)
         percent_allocated = sum([a[1] for a in allocation])
         equities = []
         cash_left = decimal.Decimal(cash_available)
